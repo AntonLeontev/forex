@@ -1,68 +1,79 @@
-require "rmagick"
+require 'rmagick'
+require "json"
+require_relative 'methods.rb'
 
-graph = {}
+# frozen_string_literal: true
 
-start = 360 + rand(-100..100)
-
-
-70.times { |i| 
-  graph[i] = {
-    "start"  => start,
-    "finish" => start + rand(-50..50),
-    "max"    => start - rand(0..75),
-    "min"    => start + rand(0..75)
-  }
-
-  start = graph[i]["finish"]
-}
-
-p graph
+rate = JSON.parse(File.read('candles_db.json'))
 
 
+# View settings
+density          = 10   # плотность отображения японских свеч
+thickness        = 7    # толщина одной свечи
+image_height     = 500  # высота создаваемого изображения в пкс
+image_width      = 600  # ширина создаваемого изображения в пкс
+vertical_padding = 10   # размер верхнего и нижнего поля изображения
+
+
+top_extremum = to_points(rate.map { |x| x[1]['max']}.max)
+low_extremum = to_points(rate.map { |x| x[1]['min']}.min)
+scale_ratio = (image_height.to_f - vertical_padding * 2) /
+  (top_extremum - low_extremum)
 
 
 canvas = Magick::ImageList.new
-canvas.new_image(1280, 720, Magick::HatchFill.new('white', 'grey90', 10))
-
-dansity   = 7 # Коэффициент плотности японских свечей
-thickness = 4 # Толщина свечи
+canvas.new_image(
+  image_width, image_height, Magick::HatchFill.new('white', 'gray93')
+  )
 
 candle = Magick::Draw.new
 candle.stroke('green')
 candle.fill('green')
 candle.stroke_width(1)
 
-70.times { |i|
-  if graph[i]["start"] < graph[i]["finish"]
+60.times { |i|
+
+  if rate[i.to_s]["start"] > rate[i.to_s]["finish"]
     candle.fill_opacity(0)
   else
     candle.fill_opacity(1)
   end
 
   candle.rectangle(
-    i * dansity, graph[i]["start"], 
-    i * dansity + thickness, graph[i]["finish"]
+    i * density, 
+    (top_extremum - to_points(rate[i.to_s]["start"])) * 
+      scale_ratio + vertical_padding,
+    i * density + thickness, 
+    (top_extremum - to_points(rate[i.to_s]["finish"])) * 
+      scale_ratio + vertical_padding + 1
   )
 
-  high_end      = [graph[i]["start"], graph[i]["finish"]].min
-  low_end       = [graph[i]["start"], graph[i]["finish"]].max
-  candle_center = i * dansity + thickness/2
+  high_end      = [rate[i.to_s]["start"], rate[i.to_s]["finish"]].max
+  low_end       = [rate[i.to_s]["start"], rate[i.to_s]["finish"]].min
+  candle_centre = i * density + thickness / 2
 
-  if graph[i]["max"] < high_end
-    candle.line( 
-      candle_center, high_end, 
-      candle_center, graph[i]["max"]
+  if rate[i.to_s]["max"] != high_end
+    candle.line(
+      candle_centre, 
+      (top_extremum - to_points(high_end)) * 
+        scale_ratio + vertical_padding,
+      candle_centre, 
+      (top_extremum - to_points(rate[i.to_s]["max"])) * 
+        scale_ratio + vertical_padding
     )
   end
 
-  if graph[i]["min"] > low_end
-    candle.line( 
-      candle_center, low_end, 
-      candle_center, graph[i]["min"]
+  if rate[i.to_s]["min"] != low_end
+    candle.line(
+      candle_centre, 
+      (top_extremum - to_points(low_end)) * 
+        scale_ratio + vertical_padding + 1,
+      candle_centre, 
+      (top_extremum - to_points(rate[i.to_s]['min'])) * 
+        scale_ratio + vertical_padding
     )
   end
 }
 
 candle.draw(canvas)
 canvas.write('test.jpg')
-puts "Готово, хозяин!"
