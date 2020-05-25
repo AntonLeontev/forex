@@ -1,8 +1,8 @@
 class GraphWindow < Magick::ImageList
 
-  def initialize(settings)
-    super()
-
+  def initialize
+    super
+    settings = read_settings
     self.new_image(settings["image_width"], 
                    settings["image_height"], 
                    Magick::HatchFill.new(settings["grid_main_color"],
@@ -12,6 +12,17 @@ class GraphWindow < Magick::ImageList
     GraphImage.take_and_process(settings)
     Candles.new.draw(self)
     LeftScale.new.draw(self)
+  end
+
+  private
+
+  def read_settings
+    current_path = File.dirname(__FILE__)
+    doc = File.read(current_path + 
+          "/default_settings.xml").scan(/<(\w+)>(\w+)<\/\1>/)
+    settings = {}
+    doc.each { |i| settings[i[0]] = i[1].match(/\A\d+\z/) ? i[1].to_i : i[1] }
+    settings
   end
 end
 

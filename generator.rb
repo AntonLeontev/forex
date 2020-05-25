@@ -28,8 +28,8 @@ euro   = 82.0
 xml = Nokogiri::XML::Builder.new { |xml|
   xml.default_settings do
     xml.canvas_settings do
-      xml.image_height "720"
-      xml.image_width "1280"
+      xml.image_height "600"
+      xml.image_width "550"
       xml.vertical_padding "10"
 
       xml.grid_settings do
@@ -40,8 +40,8 @@ xml = Nokogiri::XML::Builder.new { |xml|
     end
 
     xml.candles_settings do
-      xml.density "14"
-      xml.thickness "10"
+      xml.density "10"
+      xml.thickness "7"
       xml.candle_stroke "green"
       xml.candle_fill "green"
       xml.candle_stroke_width "1"
@@ -70,3 +70,7 @@ current_path = File.dirname(__FILE__)
 
 File.write(current_path + '/data/candles/minute_candles_db.json', rate.to_json)
 File.write(current_path + '/default_settings.xml', xml)
+
+
+
+
