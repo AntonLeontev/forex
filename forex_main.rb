@@ -3,7 +3,6 @@
 require 'rmagick'
 require 'json'
 require_relative 'classes.rb'
-require_relative 'methods.rb'
 
 settings = {
   "image_width"          => 1280, 
@@ -25,7 +24,11 @@ settings = {
   "start_date"           => 1589749200,
   "finish_date"          => 1589752200,
   "scale_stroke"         => 'black',
-  "scale_stroke_opacity" => 0
+  "scale_stroke_opacity" => 0,
+  "scale_mark_size"      => 10,
+  "text_left_padding"    => 5,
+  "text_vert_padding"    => 5
 }
+
 graph_window = GraphWindow.new(settings)
 graph_window.write('test.jpg')
