@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<default_settings>
+  <canvas_settings>
+    <image_height>600</image_height>
+    <image_width>550</image_width>
+    <vertical_padding>10</vertical_padding>
+    <grid_settings>
+      <grid_main_color>white</grid_main_color>
+      <grid_line_color>grey95</grid_line_color>
+      <grid_step>10</grid_step>
+    </grid_settings>
+  </canvas_settings>
+  <candles_settings>
+    <density>10</density>
+    <thickness>7</thickness>
+    <candle_stroke>green</candle_stroke>
+    <candle_fill>green</candle_fill>
+    <candle_stroke_width>1</candle_stroke_width>
+    <up_candle_opacity>1</up_candle_opacity>
+    <down_candle_opacity>0</down_candle_opacity>
+    <start_date>1589749200</start_date>
+    <finish_date>1589752200</finish_date>
+  </candles_settings>
+  <scale_settings>
+    <scale_margin>10</scale_margin>
+    <scale_stroke>black</scale_stroke>
+    <scale_stroke_opacity>0</scale_stroke_opacity>
+    <scale_mark_size>10</scale_mark_size>
+  </scale_settings>
+  <test_settings>
+    <font_size>14</font_size>
+    <text_left_padding>5</text_left_padding>
+    <text_vert_padding>5</text_vert_padding>
+  </test_settings>
+</default_settings>
