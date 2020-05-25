@@ -11,13 +11,14 @@ class GraphWindow < Magick::ImageList
 
     GraphImage.take_and_process(settings)
     Candles.new.draw(self)
-    # LeftScale.new.(settings)  .left_scale.draw(self)
+    LeftScale.new.draw(self)
     # RightScale.new.(settings) .right_scale.draw(self)
     # BottomScale.new.(settings).bottom_scale.draw(self)
   end
 end
 
 class GraphImage < Magick::Draw
+
   class << self
     attr_reader :settings
 
@@ -28,11 +29,15 @@ class GraphImage < Magick::Draw
     private
 
     def add_params(hash)
-      hash["history"]      = to_points(rate_history)
-      hash["top_extremum"] = top_extremum(hash["history"])
-      hash["low_extremum"] = low_extremum(hash["history"])
-      hash["amplitude"]    = amplitude(hash)
-      hash["scale_ratio"]  = scale_ratio(hash)
+      hash["history"]          = to_points(rate_history)
+      hash["top_extremum"]     = top_extremum(hash["history"])
+      hash["low_extremum"]     = low_extremum(hash["history"])
+      hash["amplitude"]        = amplitude(hash)
+      hash["scale_ratio"]      = scale_ratio(hash)
+      hash["page_bottom"]      = page_bottom(hash)
+      hash["page_top"]         = page_top(hash)
+      hash["scale_main_step"]  = scale_step(hash["amplitude"])
+      # hash["scale_small_step"] = scale_small_step
       hash
     end
 
@@ -58,9 +63,66 @@ class GraphImage < Magick::Draw
         hash["vertical_padding"] * 2) / hash["amplitude"]
     end
 
+    def page_bottom(hash)
+      (hash["low_extremum"] - hash["vertical_padding"] / 
+        hash["scale_ratio"]).ceil
+    end
+
+    def page_top(hash)
+      (hash["top_extremum"] + hash["vertical_padding"] / 
+        hash["scale_ratio"]).floor
+    end
+
+
+  def scale_step(amplitude) 
+    case amplitude
+    when 0..5
+      1
+    when 6..12
+      2
+    when 13..22
+      5
+    when 23..45
+      10
+    when 46..90
+      20
+    when 90..110
+      25
+    when 111..180
+      40
+    when 181..270
+      50
+    when 271..320
+      75
+    when 321...650
+      100
+    else
+      handsome_round(amplitude)
+    end
+  end
+
+  def handsome_round(amplitude) 
+    number = amplitude / 5
+    arr    = number.digits.reverse
+
+    if (3..7).any?(arr[1]) 
+      arr[1] = 5
+    elsif (0..2).any?(arr[1])
+      arr[1] = 0
+    else
+      arr[0] += 1
+      arr[1] = 0
+    end
+
+    (2...arr.size).each { |i| arr[i] = 0 }
+    arr.join.to_i
+  end
+
     def to_points(rate_history) 
-      rate_history.each_value do |val|
-        val.each_value{ |value| (value * 10_000).round }
+      rate_history.each_key do |key|
+        rate_history[key].each_pair do |k, v| 
+          rate_history[key][k] = (v * 10_000).round 
+        end
       end
     end
   end
@@ -82,19 +144,18 @@ class Candles < GraphImage
 
   def initialize
     super
-
     settings = GraphImage.settings
 
-    self.stroke('green')
-    self.fill('green')
-    self.stroke_width(1)
+    self.stroke(settings["candle_stroke"])
+    self.fill(settings["candle_fill"])
+    self.stroke_width(settings["candle_stroke_width"])
 
     settings["start_date"].step(settings["finish_date"], 60).with_index do 
       |i, nth_candle|
       
       paint_candle(i, settings)
       draw_candle_body(i, nth_candle, settings)
-      draw_body_shadows(i, nth_candle, settings)
+      draw_candle_shadows(i, nth_candle, settings)
     end
   end
 
@@ -103,9 +164,9 @@ class Candles < GraphImage
 
   def paint_candle(i, settings)
     if settings["history"][i]['start'] < settings["history"][i]['finish']
-      self.fill_opacity(1)
+      self.fill_opacity(settings["up_candle_opacity"])
     else
-      self.fill_opacity(0)
+      self.fill_opacity(settings["down_candle_opacity"])
     end
   end
 
@@ -124,7 +185,7 @@ class Candles < GraphImage
   end
 
 
-  def draw_body_shadows(i, nth_candle, settings)
+  def draw_candle_shadows(i, nth_candle, settings)
     start  = settings["history"][i]["start"]
     finish = settings["history"][i]["finish"]
     min    = settings["history"][i]["min"]
@@ -158,7 +219,53 @@ class Candles < GraphImage
 end
 
 class LeftScale < GraphImage
-  
+  def initialize
+    super
+    settings = GraphImage.settings
+
+    self.stroke('black')
+    self.stroke_opacity(settings["scale_stroke_opacity"])
+    self.pointsize(settings["font_size"])
+    self.line(settings["left_padding"],
+              0,
+              settings["left_padding"],
+              settings["image_height"])
+
+    first_mark = find_first_mark(settings)
+
+    draw_main_marks(settings, first_mark)
+    draw_small_marks
+
+  end
+
+
+  private
+
+  def find_first_mark(settings)
+    (settings["page_bottom"]..).find { |x| x % settings["scale_main_step"] == 0}
+  end
+
+  def draw_main_marks(settings, first_mark)
+    first_mark.step(settings["page_top"], settings["scale_main_step"]) do
+      |mark|
+
+      position = to_graph(mark, settings)
+
+      self.line(settings["left_padding"],
+                position,
+                settings["left_padding"] + 10,
+                position)
+
+      self.text(settings["left_padding"] + 5,
+                position - 5,
+                mark.to_s.insert(1, '.'))
+    end
+  end
+
+  def draw_small_marks
+    
+  end
+
 end
 
 class RightScale < GraphImage
