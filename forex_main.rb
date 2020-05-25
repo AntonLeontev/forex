@@ -5,7 +5,18 @@ require 'json'
 require_relative 'classes.rb'
 require_relative 'methods.rb'
 
-settings = 0
+settings = add_params({
+  "image_width"      => 1280, 
+  "image_height"     => 720,
+  "vertical_padding" => 10,
+  "density"          => 14,
+  "thickness"        => 10,
+  "start_date"       => 1589749200,
+  "finish_date"      => 1589752200,
+  "grid_main_color"  => 'white',
+  "grid_line_color"  => 'grey95',
+  "grid_step"        => 10
+})
 graph_window = GraphWindow.new(settings)
 
 # left_scale = Magick::Draw.new

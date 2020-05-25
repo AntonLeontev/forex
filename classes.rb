@@ -1,99 +1,45 @@
 class GraphWindow
-  attr_accessor :vertical_padding, :image_height
-  attr_reader :canvas, :settings
+  attr_reader :canvas
 
   def initialize(settings)
-    @settings         = settings
-    @image_width      = 550
-    @image_height     = 600
-    @vertical_padding = 10
-    @canvas           = Magick::ImageList.new
-    @grid             = Magick::HatchFill.new('white', 'grey95', 10)
-    @candles          = Candles.new(1589749200, 1589752200, self).candles
-    @left_scale       = LeftScale.new
-    @right_scale      = RightScale.new
-    @bottom_scale     = BottomScale.new
 
-    @canvas.new_image(@image_width, @image_height, @grid)
-    @candles.     draw(@canvas)
-    # @left_scale.  draw(@canvas)
-    # @right_scale. draw(@canvas)
-    # @bottom_scale.draw(@canvas)
+    @canvas = Magick::ImageList.new
+
+    @canvas.new_image(settings["image_width"], 
+                      settings["image_height"], 
+                      Magick::HatchFill.new(settings["grid_main_color"],
+                                            settings["grid_line_color"],
+                                            settings["grid_step"]))
+
+    Candles.new(settings)     .candles.draw(@canvas)
+    # LeftScale.new.(settings)  .left_scale.draw(@canvas)
+    # RightScale.new.(settings) .right_scale.draw(@canvas)
+    # BottomScale.new.(settings).bottom_scale.draw(@canvas)
   end
 end
 
 class Candles
   attr_reader :candles
 
-  def initialize(start_date, finish_date, canvas)
-    
-    rate = JSON.parse(File.read('data/candles/' + 
-     'minute_candles_db.json')).transform_keys { |k| k.to_i}
+  def initialize(settings)
+    @candles = Magick::Draw.new
 
-    @density   = 10 # плотность отображения японских свечей
-    @thickness = 7  # толщина одной свечи
+    @candles.stroke('green')
+    @candles.fill('green')
+    @candles.stroke_width(1)
 
-    top_extremum = to_points(rate.map { |x| x[1]['max']}.max) # верх графика
-    low_extremum = to_points(rate.map { |x| x[1]['min']}.min) # низ графика
-    amplitude    = top_extremum - low_extremum                # размер графика
-    scale_ratio  = (canvas.image_height.to_f -
-                   canvas.vertical_padding * 2) /amplitude
-    # коэффициент масштабирования при размещении графика на экране
-
-    candles = Magick::Draw.new
-    candles.stroke('green')
-    candles.fill('green')
-    candles.stroke_width(1)
-
-    counter = 0
-    start_date.step(finish_date, 60) do |i|
-
-      if rate[i]['start'] < rate[i]['finish']
-        candles.fill_opacity(1)
-      else
-        candles.fill_opacity(0)
-      end
-
-      candles.rectangle(
-        counter * @density,
-        (top_extremum - to_points(rate[i]["start"])) * scale_ratio + 10,
-
-        counter * @density + @thickness,
-        (top_extremum - to_points(rate[i]["finish"])) * scale_ratio + 10 + 1,
-        )
-
-      high_end       = [rate[i]['start'], rate[i]['finish']].max
-      low_end        = [rate[i]['start'], rate[i]['finish']].min
-      candles_center = counter * @density + @thickness / 2
-
-      if rate[i]['max'] != high_end
-        candles.line(
-          candles_center,
-          (top_extremum - to_points(high_end)) * scale_ratio + 10,
-
-          candles_center,
-          (top_extremum - to_points(rate[i]["max"])) * scale_ratio + 10
-          )
-      end
-
-      if rate[i]['min'] != low_end
-
-        candles.line(
-          candles_center,
-          (top_extremum - to_points(low_end)) * scale_ratio + 10 + 1,
-
-          candles_center,
-          (top_extremum - to_points(rate[i]["min"])) * scale_ratio + 10
-          )
-      end
-      counter += 1
+    settings["start_date"].step(settings["finish_date"], 60).with_index do 
+      |i, nth_candle|
+      
+      paint_candle(i, settings)
+      draw_candle_body(i, nth_candle, settings)
+      draw_body_shadows(i, nth_candle, settings)
     end
-    @candles = candles
   end
 end
 
 class LeftScale
-
+  
 end
 
 class RightScale
