@@ -5,7 +5,7 @@ require 'json'
 require_relative 'classes.rb'
 require_relative 'methods.rb'
 
-settings = add_params({
+settings = {
   "image_width"      => 1280, 
   "image_height"     => 720,
   "vertical_padding" => 10,
@@ -16,7 +16,7 @@ settings = add_params({
   "grid_main_color"  => 'white',
   "grid_line_color"  => 'grey95',
   "grid_step"        => 10
-})
+}
 graph_window = GraphWindow.new(settings)
 
 # left_scale = Magick::Draw.new
@@ -48,4 +48,4 @@ graph_window = GraphWindow.new(settings)
 #   )
 # end
 
-graph_window.canvas.write('test.jpg')
+graph_window.write('test.jpg')
