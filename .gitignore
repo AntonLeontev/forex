@@ -1,4 +1,7 @@
 anton.rb
 test.jpg
+data/
 minute_candles_db.json
 default_settings.xml
+.rspec
+/spec
