@@ -32,12 +32,6 @@ class GraphImage < Magick::Draw
     attr_reader :settings
 
     def take_and_process(settings)
-      @settings = add_params(settings)
-    end
-
-    private
-
-    def add_params(settings)
       settings[:history]          = unjson(rate_history)
       settings[:top_extremum]     = top_extremum(settings[:history])
       settings[:low_extremum]     = low_extremum(settings[:history])
@@ -49,13 +43,15 @@ class GraphImage < Magick::Draw
       settings[:scale_main_step]  = scale_step_cashe[0]
       settings[:scale_small_step] = scale_step_cashe[1]
       settings[:first_mark]       = find_first_mark(settings)
-      settings
+      @settings = settings
     end
+
+    private
 
     def rate_history
       current_path = File.dirname(__FILE__)
       JSON.parse(File.read(current_path + '/data/candles/' + 
-        'minute_candles_db.json'))
+        'minute_candles_db.json')).transform_keys(&:to_i)
     end
 
     def top_extremum(history)
@@ -67,7 +63,8 @@ class GraphImage < Magick::Draw
     end
 
     def amplitude(settings)
-      settings[:top_extremum] - settings[:low_extremum]
+      amplitude = settings[:top_extremum] - settings[:low_extremum]
+      amplitude > 0 ? amplitude : 1        
     end
 
     def scale_ratio(settings)
@@ -136,9 +133,8 @@ class GraphImage < Magick::Draw
     end
 
     def unjson(rate_history)
-      rate_history.transform_keys!(&:to_i).each_key do |key|
-        rate_history[key].transform_keys!(&:to_sym)
-        rate_history[key].each_pair do |k, v| 
+      rate_history.each_key do |key|
+        rate_history[key].transform_keys(&:to_sym).each_pair do |k, v| 
           rate_history[key][k] = currency_rate_to_graph_points(v) 
         end
       end
