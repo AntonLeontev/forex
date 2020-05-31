@@ -4,13 +4,13 @@ require "json"
 
 require_relative '../classes.rb'
 describe 'GraphWindow' do
-before(:all) do
-  graph             = GraphWindow.new  
-  @default_settings = graph.send(:read_settings)
-  @settings         = GraphImage.take_and_process(graph.send(:read_settings))
-end
+  before(:all) do
+    graph             = GraphWindow.new  
+    @default_settings = graph.send(:read_settings)
+    @settings         = GraphImage.take_and_process(graph.send(:read_settings))
+  end
 
-  describe 'read_settings' do    
+  describe 'read_settings' do         
     it 'should return a hash' do
       expect(@default_settings).to be_a(Hash)
     end
@@ -131,6 +131,7 @@ end
   end
 
 
+
   describe 'page_top' do
     before(:all) do
       rate_value = GraphImage.send(:page_top, @settings)
@@ -162,9 +163,38 @@ end
   end
 
 
+  describe 'candles_unjson' do
+    before(:all) do
+      @history = GraphImage.send(:candles_unjson)
+    end
+
+    it 'should only return a hash with symblos as subhashes keys' do
+      @history.each_value do |v|
+        v.each_key { |k| expect(k).to be_a Symbol }
+      end
+    end
+
+    it 'should only return a hash with integers as subhashes values' do
+      @history.each_value do |val|
+        val.each_value { |v| expect(v).to be_an Integer }
+      end
+    end
+  end
 
 
+  describe 'to_graph' do
+    it 'should always return values between image top and bottom edges' do
+      upper_edge  = @settings[:top_extremum]
+      lower_edge  = @settings[:low_extremum]
+      graph_image = GraphImage.new
 
-
+      1000.times do
+        coord = graph_image.send(:to_graph,
+                                 rand(lower_edge..upper_edge),
+                                 @settings)
+        expect(coord).to be_between(0, 719)
+      end
+    end
+  end
 end
 

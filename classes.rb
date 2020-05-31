@@ -117,27 +117,26 @@ class GraphImage < Magick::Draw
     end
 
     def handsome_step(amplitude)
-      aprox_step_size    = amplitude / 5
-      base_values        = [10, 20, 25, 50, 100]
-      small_step_scaling = [5,  4,  5,  5,  5]
-      power_difference   = aprox_step_size.digits.size - 2      
-      
-      distances = base_values.map do |v| 
-        (v * 10**power_difference - aprox_step_size).abs 
-      end
-      
-      min   = distances.min
-      index = distances.index(min)
+      # предварительно-приблизительный шаг основных отметин шкалы
+      approx_step_size = amplitude / 5
 
-      if distances.count(min) == 1
-        main_step  = base_values[index] * 10**power_difference        
-        small_step = main_step / small_step_scaling[index]
-      else
-        main_step  = base_values[index + 1] * 10**power_difference
-        small_step = main_step / small_step_scaling[index + 1]
+      # попарно: базовые образующие для основных и меньших шагов шкалы 
+      base_values = [[10, 2], [20, 5], [25, 5], [50, 10], [100, 20]]
+
+      # разность порядков базовых образующих и приблизительного шага шкалы
+      power_difference = approx_step_size.digits.size - 2
+
+      # приводим базу к порядку приблизительного шага и дополняем пары значением
+      # удаленности приблизительного шага от каждого комфортного значения
+      upd_values = base_values.map do |arr| 
+        arr.map! { |v| v * 10**power_difference }
+        arr << (arr[0] - approx_step_size).abs
       end
 
-      [main_step, small_step]
+      # ищем минимальную удаленность приблизительного шага от комфортного. если
+      # попались два комфортных значения, до которых расстояние одинаково,
+      # выбираем больший шаг и возвращаем основной и меньший шаги
+      choice = upd_values.reduce { |c, arr| arr[2] <= c[2] ? arr : c }[0..1]
     end
   end
 
@@ -247,7 +246,7 @@ class LeftScale < GraphImage
 
   def draw_main_marks(settings)
     settings[:first_mark].step(settings[:page_top],
-                                settings[:scale_main_step]) do |mark|
+                               settings[:scale_main_step]) do |mark|
 
       y_coord_cashe = to_graph(mark, settings)
 
@@ -258,8 +257,14 @@ class LeftScale < GraphImage
 
       self.text(settings[:scale_margin] + settings[:text_left_padding],
                 y_coord_cashe - settings[:text_vert_padding],
-                mark.to_s.insert(1, '.'))
+                mark_value(mark))
     end
+  end
+
+  def mark_value(mark)
+    mark = mark.to_s
+    (5 - mark.size).times { mark.prepend('0') } if mark.size < 5
+    mark.insert(-5, '.')
   end
 
   def draw_small_marks(settings)
