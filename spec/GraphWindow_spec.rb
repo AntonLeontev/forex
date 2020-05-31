@@ -5,9 +5,9 @@ require "json"
 require_relative '../classes.rb'
 describe 'GraphWindow' do
 before(:all) do
-  @graph            = GraphWindow.new  
-  @default_settings = @graph.send(:read_settings)
-  @settings         = GraphImage.take_and_process(@graph.send(:read_settings))
+  graph             = GraphWindow.new  
+  @default_settings = graph.send(:read_settings)
+  @settings         = GraphImage.take_and_process(graph.send(:read_settings))
 end
 
   describe 'read_settings' do    
@@ -22,9 +22,9 @@ end
     it 'should return a hash with precisely 5 string values' do
       expect(@default_settings[:grid_main_color]).to be_a(String)
       expect(@default_settings[:grid_line_color]).to be_a(String)
-      expect(@default_settings[:candle_stroke]).to be_a(String)
-      expect(@default_settings[:candle_fill]).to be_a(String)
-      expect(@default_settings[:scale_stroke]).to be_a(String)
+      expect(@default_settings[:candle_stroke])  .to be_a(String)
+      expect(@default_settings[:candle_fill])    .to be_a(String)
+      expect(@default_settings[:scale_stroke])   .to be_a(String)
     end
 
     it 'should return a hash with precisely 17 integer values' do
@@ -97,6 +97,14 @@ end
 
 
 
+  describe 'amplitude' do
+    it 'should always return pointsize' do
+      expect(GraphImage.send(:amplitude, @settings)).to be > 0
+    end
+  end
+
+
+
   describe 'scale_ratio' do
     it 'should return a value greater than 0' do      
       expect(GraphImage.send(:scale_ratio, @settings)).to be > 0
@@ -106,8 +114,57 @@ end
 
 
   describe 'page_bottom' do
-    
+    before(:all) do
+      rate_value = GraphImage.send(:page_bottom, @settings)
+      @y_coord   = GraphImage.new.send(:to_graph, rate_value, @settings)      
+    end
+
+    it "should never return rate values that render " + 
+       "lower than the image's bottom edge" do
+      expect(@y_coord).not_to be > @settings[:image_height] - 1
+    end
+
+    it "should never return values that render higher than" + 
+       "image's bottom edge more than by scale_ratio" do
+      expect(@y_coord).not_to be < @settings[:image_height] - 1 - @settings[:scale_ratio]
+    end
   end
+
+
+  describe 'page_top' do
+    before(:all) do
+      rate_value = GraphImage.send(:page_top, @settings)
+      @y_coord   = GraphImage.new.send(:to_graph, rate_value, @settings)
+    end
+
+    it "should never return values that render higher than" +
+       "the image's top edge" do
+      
+      expect(@y_coord).not_to be < 0
+    end
+
+    it "should never return values that render lower than" +
+       "the image's top edge more than by scale_ratio" do
+
+      expect(@y_coord).not_to be > @settings[:scale_ratio]
+    end
+  end
+
+
+
+  describe 'find_first_mark' do
+    it "should never return values that render higher than" +
+       "the image's bottom edge more than by scale_main_step" do
+      rate_value = GraphImage.send(:find_first_mark, @settings)
+      y_coord   = GraphImage.new.send(:to_graph, rate_value, @settings)
+      expect(y_coord).not_to be < @settings[:image_height] - 1 - @settings[:scale_main_step] * @settings[:scale_ratio]   
+    end
+  end
+
+
+
+
+
 
 end
 

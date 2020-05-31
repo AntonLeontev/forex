@@ -10,8 +10,8 @@ euro   = 82.0
   minute_history = []
 
   60.times do |x|
-    dollar = (dollar + rand(-0.02..0.02)).round(4)
-    euro   = (euro   + rand(-0.02..0.02)).round(4)
+    dollar = (dollar + rand(-2.5..2.5)).round(4)
+    euro   = (euro   + rand(-2.5..2.5)).round(4)
 
     minute_history << (euro / dollar).round(4)
   end
